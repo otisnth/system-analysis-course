@@ -6,11 +6,6 @@ function removeAllChilds(parent) {
 
 function createElem(typeElem, classElem, idElem, content) {
     let element = document.createElement(typeElem);
-    // TODO принимать на вход объект атрибутов, 
-    // ключи - название атрибута
-    // значения - значениея атрибута
-    // перебирать объект через for in 
-    // element[var] = arr[var]
     element.className = classElem;
     element.id = idElem;
     element.innerHTML = content;
@@ -36,12 +31,25 @@ function createSetList(set) {
     return ul;
 }
 
+function createHierarchyList(set) {
+    let ul = createElem("ul", "set", "", "");
+
+    for (let i = 0; i < set.length; ++i) {
+        let str = `Уровень ${i} = `;
+        str += set[i].join(", ");
+
+        let li = createElem("li", "set-item", "", str);
+
+        ul.append(li);
+    }
+    return ul;
+}
 
 document.addEventListener("DOMContentLoaded", () => {
     let inputDimension = document.querySelector(".matrix-dimension");
-    let matrixDimension, matrix, leftSet, rightSet;
+    let matrixDimension, matrix, leftSet, hierarchyList, newRightSet;
     let matrixArea = document.querySelector('.input-matrix'),
-        leftSetArea = document.querySelector('.left-set'),
+        hierarchyLevelArea = document.querySelector('.hierarchy-level'),
         rightSetArea = document.querySelector('.right-set'),
         sendMatrixBtn = document.querySelector(".send-matrix");
 
@@ -75,13 +83,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     sendMatrixBtn.addEventListener("click", (e) => {
 
+        let hierarchyArr = [];
+
         matrix = new Array(matrixDimension);
         leftSet = new Array(matrixDimension);
-        rightSet = new Array(matrixDimension);
+        newRightSet = new Array(matrixDimension);
+        hierarchyList = [];
         for (let i = 0; i < matrixDimension; i++) {
             matrix[i] = new Array(matrixDimension);
             leftSet[i] = [];
-            rightSet[i] = [];
+            newRightSet[i] = [];
         }
 
         let tr = matrixArea.firstChild;
@@ -99,17 +110,58 @@ document.addEventListener("DOMContentLoaded", () => {
             for (let j = 0; j < matrix[i].length; ++j) {
                 if (matrix[i][j] > 0) {
                     leftSet[j].push(i + 1);
-                    rightSet[i].push(j + 1);
                 }
             }
 
         }
 
-        removeAllChilds(leftSetArea);
+        removeAllChilds(hierarchyLevelArea);
         removeAllChilds(rightSetArea);
 
-        leftSetArea.append(createSetList(leftSet));
-        rightSetArea.append(createSetList(rightSet));
+        let countLevel = -1, breakFlag = matrixDimension;
+
+        while (breakFlag) {
+            countLevel++;
+            hierarchyList.push([]);
+
+            for (let i = 0; i < leftSet.length; ++i) {
+                if (leftSet[i].length == 0) {
+                    hierarchyList[countLevel].push(i + 1);
+                    leftSet[i].push('Empty');
+                    breakFlag--;
+                }
+            }
+
+            for (let j = 0; j < leftSet.length; ++j){
+                for (let k = 0; k < leftSet[j].length; ++k){
+
+                    
+                    if (hierarchyList[countLevel].includes(leftSet[j][k] )) {
+                        leftSet[j].splice(k, 1);
+                        --k;
+                    }
+                }
+            }
+        }
+
+        for (let level of hierarchyList){
+            for (let item of level){
+                hierarchyArr.push(item - 1);
+            }
+        }
+        
+        for (let i = 0; i < matrix.length; ++i) {
+
+            for (let j = 0; j < matrix[i].length; ++j) {
+                if (matrix[hierarchyArr[i]][hierarchyArr[j]] > 0) {
+                    newRightSet[i].push(j + 1);
+                }
+            }
+
+        }
+
+        hierarchyLevelArea.append(createHierarchyList(hierarchyList));
+        rightSetArea.append(createSetList(newRightSet));
         
     })
 
