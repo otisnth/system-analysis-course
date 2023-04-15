@@ -41,11 +41,31 @@ function buildControllable(adjMatrix, start) {
     return buildReachable(transpose, start);
 }
 
+function createSetList(set, text) {
+    let ul = createElem("ul", "set", "", "");
+
+    for (let i = 0; i < set.length; ++i) {
+        let str = `${text}(${i+1}) = {`;
+        if (set[i].length == 0){
+            str += "Нет вершин";
+        }
+        else {
+            str += set[i].join(", ");
+        }
+        str += "}";
+        let li = createElem("li", "set-item", "", str);
+
+        ul.append(li);
+    }
+    return ul;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     let inputDimension = document.querySelector(".matrix-dimension");
-    let matrixDimension, matrix, rightSet;
+    let matrixDimension, matrix, rightSet, newRightSet, components, vertexList, newMatrix;
     let matrixArea = document.querySelector(".input-matrix"),
         rightSetArea = document.querySelector(".right-set"),
+        subgraphsArea = document.querySelector(".subgraphs"),
         sendMatrixBtn = document.querySelector(".send-matrix");
 
     inputDimension.addEventListener("change", (e) => {
@@ -81,6 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     sendMatrixBtn.addEventListener("click", (e) => {
 
+        components = [];
         matrix = new Array(matrixDimension);
         rightSet = new Array(matrixDimension);
         for (let i = 0; i < matrixDimension; i++) {
@@ -99,131 +120,84 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         for (let i = 0; i < matrix.length; ++i) {
+            rightSet.push(new Array());
             for (let j = 0; j < matrix[i].length; ++j) {
                 if (matrix[i][j] > 0) {
-                    leftSet[j].push(i + 1);
+                    rightSet[i].push(j + 1);
                 }
             }
+        
         }
+
+        vertexList = new Array(matrix.length).fill(true);
+
+        for (let i = 0; i < vertexList.length; ++i) {
+            let reachVertList = buildReachable(matrix, i);
+            
+            let contVertList = buildControllable(matrix, i);
+        
+            let tmpComps = [];
+        
+            for (let j = 0; j < vertexList.length; j++) {
+                if (reachVertList[j] && contVertList[j] && vertexList[j]) {
+                    tmpComps.push(j + 1);
+                    vertexList[j] = false;
+                }
+            }
+            if (tmpComps.length != 0) components.push(tmpComps);
+        }
+
+        newRightSet = [];
+        newMatrix = new Array(components.length);
+        
+        for (let i = 0; i < components.length; ++i) {
+            newMatrix[i] = new Array(components.length);
+        }
+        
+        for (const i in newMatrix) {
+            for (const j in newMatrix[i]) {
+                newMatrix[i][j] = 0;
+            }
+        }
+        
+        for (let i = 0; i < matrix.length; ++i) {
+            for (let j = 0; j < matrix[i].length; ++j) {
+                if (matrix[i][j] > 0) {
+                    let startSubGraph, endSubGraph;
+                    for (let l in components) {
+                        if (components[l].includes(+i + 1)) {
+                            startSubGraph = +l;
+                        }
+                        if (components[l].includes(+j + 1)){
+                            endSubGraph = +l;
+                        }
+                    }
+                    if (startSubGraph != endSubGraph){
+                        newMatrix[startSubGraph][endSubGraph] = 1;
+                    }
+                }
+            }
+        
+        }
+        
+        
+        for (let i = 0; i < newMatrix.length; ++i) {
+            newRightSet.push(new Array());
+            for (let j = 0; j < newMatrix[i].length; ++j) {
+                if (newMatrix[i][j] > 0) {
+                    newRightSet[i].push(j + 1);
+                }
+            }
+        
+        }
+        console.log(components);
+        console.log(newRightSet);
+
+
         removeAllChilds(rightSetArea);
+        removeAllChilds(subgraphsArea);
+
+        subgraphsArea.append(createSetList(components, "G"));
+        rightSetArea.append(createSetList(newRightSet, "G"));
     });
 });
-
-let testMatr = [
-    [0, 1, 0, 0, 1, 1, 0, 0, 0, 0],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 1, 0, 1, 1, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-    [1, 0, 0, 0, 0, 0, 1, 0, 0, 0],
-    [0, 0, 0, 0, 1, 0, 0, 1, 0, 1],
-    [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
-    [0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-];
-
-// let testMatr = [[0, 1, 0, 0, 0],
-// [0, 0, 0, 1, 0],
-// [0, 1, 0, 0, 0],
-// [0, 0, 1, 0, 0],
-// [1, 0, 1, 1, 0]];
-
-
-let rightSet = [];
-let newRightSet;
-
-let vertexList = new Array(testMatr.length).fill(true);
-let components = [];
-
-
-for (let i = 0; i < testMatr.length; ++i) {
-    rightSet.push(new Array());
-    for (let j = 0; j < testMatr[i].length; ++j) {
-        if (testMatr[i][j] > 0) {
-            rightSet[i].push(j + 1);
-        }
-    }
-
-}
-
-console.log(rightSet);
-
-
-for (let i = 0; i < vertexList.length; ++i) {
-    let reachVertList = buildReachable(testMatr, i);
-    
-    let contVertList = buildControllable(testMatr, i);
-
-    let tmpComps = [];
-
-    for (let j = 0; j < vertexList.length; j++) {
-        if (reachVertList[j] && contVertList[j] && vertexList[j]) {
-            tmpComps.push(j + 1);
-            vertexList[j] = false;
-        }
-    }
-    if (tmpComps.length != 0) components.push(tmpComps);
-}
-
-console.log(components);
-
-// let checkComponents = new Array(components.length).fill(new Array(components.length).fill(true));
-// console.log(checkComponents);
-
-newRightSet = [];
-let newMatrix = new Array(components.length).fill(new Array(components.length).fill(0));
-
-for (let i = 0; i < testMatr.length; ++i) {
-    for (let j = 0; j < testMatr[i].length; ++j) {
-        if (testMatr[i][j] > 0) {
-            let startSubGraph, endSubGraph;
-            for (let l in components) {
-                if (components[l].includes(+i + 1)) {
-                    startSubGraph = +l;
-                }
-                if (components[l].includes(+j + 1)){
-                    endSubGraph = +l;
-                }
-            }
-            if (startSubGraph != endSubGraph){
-                newMatrix[startSubGraph][endSubGraph] = 1;
-            }
-        }
-    }
-
-}
-
-console.log(newMatrix);
-
-for (let i = 0; i < newMatrix.length; ++i) {
-    newRightSet.push(new Array());
-    for (let j = 0; j < newMatrix[i].length; ++j) {
-        if (newMatrix[i][j] > 0) {
-            newRightSet[i].push(j + 1);
-        }
-    }
-
-}
-
-// for (let i in rightSet) {
-//     for (let j in rightSet[i]) {
-//         let startSubGraph, endSubGraph;
-//         for (let l in components) {
-//             if (components[l].includes(+i + 1)) {
-//                 startSubGraph = +l;
-//             }
-//             if (components[l].includes(+rightSet[i][j])){
-//                 endSubGraph = +l;
-//             }
-//         }
-        
-//         if (checkComponents[startSubGraph][endSubGraph] && (startSubGraph != endSubGraph)){
-//             checkComponents[startSubGraph][endSubGraph] = false;
-//             console.log(startSubGraph);
-//             console.log(endSubGraph);
-//             console.log("++");
-//             newRightSet[startSubGraph].push(endSubGraph + 1);
-//         }
-//     }
-// }
-console.log(newRightSet);
