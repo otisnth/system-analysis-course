@@ -45,6 +45,40 @@ function createHierarchyList(set) {
     return ul;
 }
 
+function levit(graph, source) {
+    const distance = Array(graph.length).fill(Infinity); // массив расстояний от начальной вершины
+    const queue = []; // очередь для обхода вершин
+    const visited = Array(graph.length).fill(false); // массив для хранения информации о посещении вершины
+    distance[source] = 0; // начальное расстояние
+  
+    queue.push(source);
+  
+    while (queue.length > 0) {
+      let currentVertex = queue.shift();
+      visited[currentVertex] = false;
+  
+      for (let j = 0; j < graph.length; j++) {
+        if (graph[currentVertex][j] !== Infinity) {
+          const newDist = distance[currentVertex] + graph[currentVertex][j];
+          if (newDist < distance[j]) {
+            distance[j] = newDist;
+  
+            if (!visited[j]) {
+              if (queue.length > 0 && newDist < distance[queue[0]]) {
+                queue.unshift(j);
+              } else {
+                queue.push(j);
+              }
+              visited[j] = true;
+            }
+          }
+        }
+      }
+    }
+  
+    return distance;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     let inputDimension = document.querySelector(".matrix-dimension");
     let matrixDimension, matrix, leftSet, hierarchyList, newRightSet;
@@ -118,51 +152,24 @@ document.addEventListener("DOMContentLoaded", () => {
         removeAllChilds(hierarchyLevelArea);
         removeAllChilds(rightSetArea);
 
-        let countLevel = -1, breakFlag = matrixDimension;
-
-        while (breakFlag) {
-            countLevel++;
-            hierarchyList.push([]);
-
-            for (let i = 0; i < leftSet.length; ++i) {
-                if (leftSet[i].length == 0) {
-                    hierarchyList[countLevel].push(i + 1);
-                    leftSet[i].push('Empty');
-                    breakFlag--;
-                }
-            }
-
-            for (let j = 0; j < leftSet.length; ++j){
-                for (let k = 0; k < leftSet[j].length; ++k){
-
-                    
-                    if (hierarchyList[countLevel].includes(leftSet[j][k] )) {
-                        leftSet[j].splice(k, 1);
-                        --k;
-                    }
-                }
-            }
-        }
-
-        for (let level of hierarchyList){
-            for (let item of level){
-                hierarchyArr.push(item - 1);
-            }
-        }
         
-        for (let i = 0; i < matrix.length; ++i) {
-
-            for (let j = 0; j < matrix[i].length; ++j) {
-                if (matrix[hierarchyArr[i]][hierarchyArr[j]] > 0) {
-                    newRightSet[i].push(j + 1);
-                }
-            }
-
-        }
-
-        hierarchyLevelArea.append(createHierarchyList(hierarchyList));
-        rightSetArea.append(createSetList(newRightSet));
         
     })
 
 })
+
+const graph = [
+    [Infinity, 4, Infinity, Infinity, Infinity, Infinity, Infinity],
+    [5, Infinity, 1, Infinity, Infinity, Infinity, Infinity],
+    [Infinity, Infinity, Infinity, 11, 6, Infinity, Infinity],
+    [Infinity, Infinity, 3, Infinity, 8, Infinity, Infinity],
+    [Infinity, 1, Infinity, 3, Infinity, 15, Infinity],
+    [8, 2, Infinity, Infinity, Infinity, Infinity, Infinity],
+    [Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity]
+  ];
+
+  for (let key in graph) {
+    console.log(levit(graph, key));
+  }
+  
+  
