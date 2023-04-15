@@ -67,14 +67,19 @@ label {
     font-size: 1rem;
 }
 
-.input-matrix input {
+.input-matrix input, .distance-matrix td {
     text-align: center;
     font-size: 1rem;
     font-family: 'Roboto', sans-serif;
-    width: 25px;
-    height: 25px;
+    width: 30px;
+    height: 30px;
     border-radius: 5px;
     border: 0;
+}
+
+.distance-matrix td {
+    background-color: #fff;
+    text-align: center;
 }
 
 .matrix-cell-value__error {

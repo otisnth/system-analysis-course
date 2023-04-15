@@ -12,39 +12,6 @@ function createElem(typeElem, classElem, idElem, content) {
     return element;
 }
 
-function createSetList(set) {
-    let ul = createElem("ul", "set", "", "");
-
-    for (let i = 0; i < set.length; ++i) {
-        let str = `G(${i+1}) = {`;
-        if (set[i].length == 0){
-            str += "Нет вершин";
-        }
-        else {
-            str += set[i].join(", ");
-        }
-        str += "}";
-        let li = createElem("li", "set-item", "", str);
-
-        ul.append(li);
-    }
-    return ul;
-}
-
-function createHierarchyList(set) {
-    let ul = createElem("ul", "set", "", "");
-
-    for (let i = 0; i < set.length; ++i) {
-        let str = `Уровень ${i} = `;
-        str += set[i].join(", ");
-
-        let li = createElem("li", "set-item", "", str);
-
-        ul.append(li);
-    }
-    return ul;
-}
-
 function levit(graph, source) {
     const distance = Array(graph.length).fill(Infinity); // массив расстояний от начальной вершины
     const queue = []; // очередь для обхода вершин
@@ -81,10 +48,9 @@ function levit(graph, source) {
 
 document.addEventListener("DOMContentLoaded", () => {
     let inputDimension = document.querySelector(".matrix-dimension");
-    let matrixDimension, matrix, leftSet, hierarchyList, newRightSet;
+    let matrixDimension, matrix, distanceMatrix;
     let matrixArea = document.querySelector('.input-matrix'),
-        hierarchyLevelArea = document.querySelector('.hierarchy-level'),
-        rightSetArea = document.querySelector('.right-set'),
+        distanceMatrixArea = document.querySelector('.distance-matrix'),
         sendMatrixBtn = document.querySelector(".send-matrix");
 
     inputDimension.addEventListener("change", (e) =>{
@@ -98,16 +64,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 let td = createElem("td", "matrix-cell", i + "-" + j, `<input class="matrix-cell-value" type="text" value="0">`);
 
-                td.firstChild.addEventListener("change", (e) => {
-                    if (e.target.value != 1 && e.target.value !=0) {
-                        e.target.classList.add("matrix-cell-value__error");
-                        sendMatrixBtn.disabled = true;
-                    } else {
-                        e.target.classList.remove("matrix-cell-value__error");
-                        sendMatrixBtn.disabled = false;
-                    }
-                })
-
                 tr.append(td);
             }
             matrixArea.append(tr);
@@ -117,59 +73,46 @@ document.addEventListener("DOMContentLoaded", () => {
 
     sendMatrixBtn.addEventListener("click", (e) => {
 
-        let hierarchyArr = [];
-
         matrix = new Array(matrixDimension);
-        leftSet = new Array(matrixDimension);
-        newRightSet = new Array(matrixDimension);
-        hierarchyList = [];
+        distanceMatrix = [];
+        
         for (let i = 0; i < matrixDimension; i++) {
             matrix[i] = new Array(matrixDimension);
-            leftSet[i] = [];
-            newRightSet[i] = [];
         }
 
         let tr = matrixArea.firstChild;
         for (let i = 0; i < matrixDimension; ++i){
             let td = tr.firstChild;
             for (let j = 0; j < matrixDimension; ++j){
-                matrix[i][j] = td.firstChild.value;
+                
+                if (+td.firstChild.value != 0) matrix[i][j] = +td.firstChild.value;
+                else matrix[i][j] = Infinity;
+
                 td = td.nextSibling;
             }
             tr =  tr.nextSibling;
         }
         
         for (let i = 0; i < matrix.length; ++i) {
-
-            for (let j = 0; j < matrix[i].length; ++j) {
-                if (matrix[i][j] > 0) {
-                    leftSet[j].push(i + 1);
-                }
-            }
-
+            distanceMatrix.push(levit(matrix, i));
         }
 
-        removeAllChilds(hierarchyLevelArea);
-        removeAllChilds(rightSetArea);
 
-        
+        removeAllChilds(distanceMatrixArea);
+
+        for (const i in distanceMatrix) {
+            let tr = createElem("tr", "matrix-row", i, "");
+            for (const j in distanceMatrix[i]) {
+                let td = createElem("td", "matrix-cell", i + "-" + j, "");
+
+                if (distanceMatrix[i][j] == Infinity) td.innerHTML = "&infin;";
+                else td.textContent = distanceMatrix[i][j];
+                
+                tr.append(td);
+            }
+            distanceMatrixArea.append(tr);
+        }
         
     })
 
 })
-
-const graph = [
-    [Infinity, 4, Infinity, Infinity, Infinity, Infinity, Infinity],
-    [5, Infinity, 1, Infinity, Infinity, Infinity, Infinity],
-    [Infinity, Infinity, Infinity, 11, 6, Infinity, Infinity],
-    [Infinity, Infinity, 3, Infinity, 8, Infinity, Infinity],
-    [Infinity, 1, Infinity, 3, Infinity, 15, Infinity],
-    [8, 2, Infinity, Infinity, Infinity, Infinity, Infinity],
-    [Infinity, Infinity, Infinity, Infinity, Infinity, Infinity, Infinity]
-  ];
-
-  for (let key in graph) {
-    console.log(levit(graph, key));
-  }
-  
-  
